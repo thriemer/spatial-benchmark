@@ -1,0 +1,10 @@
+{
+  "types": [
+    {"name": "org.apache.hc.client5.http.impl.auth.BasicScheme"},
+    {"name": "de.thriemer.spatial.OpenSearchDatabase$OpenSearchDataPoint"},
+    {"name": "org.opensearch.client.json.JsonDataImpl"},
+    {"name": "java.util.HashMap"}
+  ],
+  "lambdaCapturingTypes": [],
+  "proxies": []
+}

@@ -1,0 +1,5 @@
+Compared\Base,Azure Data Explorer,Aerospike,OpenSearch,PostGIS
+Azure Data Explorer,,,,
+Aerospike,4,,1,1
+OpenSearch,4,,,1
+PostGIS,4,,,
