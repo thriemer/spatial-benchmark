@@ -9,9 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -70,7 +67,7 @@ public class AhpSolver {
             for (String databaseName : databaseNames) {
                 for (String other : databaseNames) {
                     float weight = (float) databaseComparisonRepository.calculateSpeedup(transform(databaseName), transform(other), entry.getValue());
-                    speedUps.put(databaseName + other, Math.min(weight, 9));
+                    speedUps.put(databaseName + other, weight);
                 }
             }
             matrixCache.putComparisonsMatrix(entry.getKey(), matrixCache.matrixFromMap(speedUps, databaseNames));
@@ -89,8 +86,8 @@ public class AhpSolver {
             for (String databaseName : databaseNames) {
                 var comparisons = databaseComparisonRepository.combineComparison(transform(databaseName), entry.getValue());
                 for (var comparison : comparisons) {
-                    float weight = Math.min((float) comparison.getSpeedUp(), 9);
-                    speedUps.put(databaseName + comparison.getDatabase(), Math.min(weight, 9));
+                    float weight = (float) comparison.getSpeedUp();
+                    speedUps.put(databaseName + comparison.getDatabase(), weight);
                 }
             }
             matrixCache.putComparisonsMatrix(entry.getKey(), matrixCache.matrixFromMap(speedUps, databaseNames));
@@ -187,11 +184,10 @@ public class AhpSolver {
         String criterion = e.getKey();
         Matrix m = e.getValue();
         float consistency = calculateConsistency(m);
-        String sb = "\\begin{table}[!htbp]\n\\centering\n" +
+        return "\\begin{table}[!htbp]\n\\centering\n" +
                 matrixWithWeightToLatexTable(m) +
                 "\\caption{" + criterion + ", consistency: " + Evaluation.df.format(consistency) + "}\n" +
                 "\\end{table}\n\n";
-        return sb;
     }
 
     private String constructCriteriaMatrices() {
