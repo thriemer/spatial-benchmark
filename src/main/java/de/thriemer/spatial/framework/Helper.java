@@ -21,7 +21,7 @@ import java.util.stream.IntStream;
 @Configuration
 public class Helper {
 
-    private static boolean standAlone = false;
+    private static boolean standAlone = true;
 
     public static String sensiblePrint(long ms) {
         return prettyPrint(Duration.ofMillis(ms));

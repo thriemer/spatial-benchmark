@@ -34,3 +34,7 @@ There are two options `--skip-benchmark` which skips the benchmark and only runs
 ## Running the evaluation
 
 The evaluation can be run using `./mvnw spring-boot:run -Dspring-boot.run.arguments=--skip-benchmark`
+
+## Deleting benchmark results
+
+To delete all benchmark results, delete the file `evaluationdb.mv.db`
