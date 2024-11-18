@@ -15,16 +15,6 @@ public interface SummaryStatisticsRepository extends CrudRepository<ScenarioStat
 
     List<ScenarioStatisticsEntity> getAllByDatabase(String database);
 
-    @Query("SELECT s from ScenarioStatisticsEntity s where s.database=:database and s.name=:scenario and s.param=:param")
-    ScenarioStatisticsEntity getScenarioStatistic(String database, String scenario, String param);
-
-    @Query("SELECT s from ScenarioStatisticsEntity s where s.database=:database and s.name=:scenario and s.param=:param")
-    List<ScenarioStatisticsEntity> getScenarioStatistics(String database, String scenario, String param);
-
-
-    @Query("select distinct s.param from ScenarioStatisticsEntity s where s.name=:scenario")
-    List<String> getAllParams(String scenario);
-
     @Query("SELECT DISTINCT database FROM ScenarioStatisticsEntity")
     List<String> getAllDatabases();
 

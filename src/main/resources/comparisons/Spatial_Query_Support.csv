@@ -1,5 +1,5 @@
 Compared\Base,Azure Data Explorer,Aerospike,OpenSearch,PostGIS
-Azure Data Explorer,,4,2,0.5
+Azure Data Explorer,,5,2,""
 Aerospike,,,,
-OpenSearch,,2,,
-PostGIS,2,8,4,
+OpenSearch,,3,,
+PostGIS,6,8,6,

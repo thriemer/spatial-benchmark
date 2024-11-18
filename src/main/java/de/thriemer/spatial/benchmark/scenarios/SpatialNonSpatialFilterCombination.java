@@ -16,7 +16,7 @@ import java.util.Random;
 
 @Component
 @Slf4j
-public class SpatialNonSpatialFilterCombination extends Scenario {
+public class SpatialNonSpatialFilterCombination extends Scenario<String> {
 
     private final Blackhole blackhole;
     private static final long seed = 42;
@@ -49,14 +49,14 @@ public class SpatialNonSpatialFilterCombination extends Scenario {
     }
 
     @Override
-    public Object[] getParams() {
-        return new Object[]{"spatial only", "additional filter"};
+    public List<String> getParams() {
+        return List.of("spatial only", "additional filter");
     }
 
     GeometryFactory factory = new GeometryFactory();
 
     @Override
-    public void iterate(DatabaseAbstraction database, Object p) {
+    public void iterate(DatabaseAbstraction database, String p) {
         double maxRange = 1.5;
         double rangeX = generator.generateInRange(0.5, maxRange);
         double startX = generator.generateInRange(minLon, maxLon - maxRange);

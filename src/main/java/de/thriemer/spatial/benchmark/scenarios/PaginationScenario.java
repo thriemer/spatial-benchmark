@@ -17,19 +17,19 @@ import java.util.List;
 
 @Component
 @Slf4j
-public class PaginationScenario extends Scenario {
+public class PaginationScenario extends Scenario<Integer> {
     private final String tableName = Parameters.OSM_DATA_TABLE;
 
     @Autowired
     Blackhole blackhole;
 
-    public static final Object[] PAGE_SIZES = new Object[]{1000, 2500, 5000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000};
+    public static final List<Integer> PAGE_SIZES = List.of(1000, 2500, 5000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000);
 
     public PaginationScenario() {
         super("Pagination Scenario Fetch Pages");
     }
 
-    public Object[] getParams() {
+    public List<Integer> getParams() {
         return PAGE_SIZES;
     }
 
@@ -44,10 +44,10 @@ public class PaginationScenario extends Scenario {
     }
 
     @Override
-    public void iterate(DatabaseAbstraction database, Object pageSize) {
+    public void iterate(DatabaseAbstraction database, Integer pageSize) {
         Page<DataPoint> page;
         double dataArea = boundingBox.getArea();
-        double queryArea = 2 * dataArea * (int) pageSize / (double) Parameters.getNumberOfPoints();
+        double queryArea = 2 * dataArea *  pageSize / (double) Parameters.getNumberOfPoints();
         double halfSideLength = Math.sqrt(queryArea) / 2d;
 
         double halfWidth = boundingBox.getWidth() / 2d;
@@ -59,13 +59,13 @@ public class PaginationScenario extends Scenario {
 
         // retrieve the first page without timing it
         int pageNumber = 0;
-        page = database.fetchArea(tableName, queryShape, pageNumber, (int) pageSize);
+        page = database.fetchArea(tableName, queryShape, pageNumber,  pageSize);
         blackhole.consumeFull(page);
         pageNumber++;
         List<DataPoint> queryResult = new ArrayList<>();
         while (pageNumber <= page.maxPageNumber) {
             timer.start();
-            page = database.fetchArea(tableName, queryShape, pageNumber, (int) pageSize);
+            page = database.fetchArea(tableName, queryShape, pageNumber,  pageSize);
             timer.end();
             queryResult.addAll(page.data);
             pageNumber++;

@@ -9,16 +9,12 @@ import de.thriemer.spatial.framework.Helper;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.knowm.xchart.*;
-import org.knowm.xchart.internal.chartpart.Chart;
 import org.knowm.xchart.style.Styler;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.awt.*;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
@@ -89,7 +85,7 @@ public class Evaluation {
         String[] accumEfficiencyHeader = new String[]{"Database", "Metric", "Normalized Average Improvement", "StDev", "Confidence Interval"};
         System.out.println(FlipTable.of(accumEfficiencyHeader, accumulatedImprovement));
 
-        String efficiencyTable = LatexTableGenerator.generateTable(accumEfficiencyHeader, accumulatedImprovement, "|l|l|r|r|r|",false);
+        String efficiencyTable = LatexTableGenerator.generateTable(accumEfficiencyHeader, accumulatedImprovement, "|l|l|r|r|r|", false);
 
         System.out.println("---- FINAL COMPARISON BASELINE: " + baseline + " -----");
         String[] comparisonHeader = new String[]{"Database", "Average Speedup", "StDev", "Confidence Interval"};
@@ -99,7 +95,7 @@ public class Evaluation {
                 .map(c -> new String[]{c.getDatabase(), df.format(c.getSpeedUp()), df.format(c.getStDev()), computeConfidenceInterval(c.getSpeedUp(), c.getStandardError(), 0.9d).toString(df)})
                 .toArray(String[][]::new);
         System.out.println(FlipTable.of(comparisonHeader, accumulatedComparison));
-        String speedUpTable = LatexTableGenerator.generateTable(comparisonHeader, accumulatedComparison, "|l|r|r|c|",false);
+        String speedUpTable = LatexTableGenerator.generateTable(comparisonHeader, accumulatedComparison, "|l|r|r|c|", false);
 
         var tree = ahpSolver.solve();
 
@@ -110,7 +106,7 @@ public class Evaluation {
 
         createNormalisedChart(new InsertScenario().name, "Batch size", "Time / Batch size");
         createNormalisedChart(new PaginationScenario().name, "Page size", "Time / Page size");
-
+        createEfficiencyNormalisedBarChart();
         createCombinationBarChart();
         createDatabaseBarChart("Multiple geolocation filters");
         createDatabaseBarChart("Pagination Scenario Random Access");
@@ -168,7 +164,7 @@ public class Evaluation {
             e.printStackTrace();
         }
 
-        Helper.savePdf(chart,"normalised_" + scenario);
+        Helper.savePdf(chart, "normalised_" + scenario);
 
     }
 
@@ -176,11 +172,10 @@ public class Evaluation {
     private void createCombinationBarChart() {
         String scenario = "Combination of spatial with non spatial filter";
         String xAxisTitle = "Query";
-        String yAxisTitle = "Query time";
         var dbNames = summaryStatisticsRepository.getAllDatabases();
         var list = summaryStatisticsRepository.findAllByNameAndType(scenario, DatabaseStatisticCollector.QUERY_TIME);
-
-        var chart = configureCategoryChart(list.getFirst().unit(), xAxisTitle, yAxisTitle);
+        String yAxisTitle = "Query time" + " [" + list.getFirst().unit() + "]";
+        var chart = configureCategoryChart(xAxisTitle, yAxisTitle);
 
         for (String dbName : dbNames) {
             List<String> xData = new ArrayList<>();
@@ -201,12 +196,36 @@ public class Evaluation {
         Helper.savePdf(chart, scenario);
     }
 
+    private void createEfficiencyNormalisedBarChart() {
+        String scenario = "Log Normalized Speedup";
+        String xAxisTitle = "Resource type";
+        String yAxisTitle = "Normalized speedup";
+        var dbNames = summaryStatisticsRepository.getAllDatabases();
+        var list = comparisonRepository.computeEfficiency(baseline);
+
+        var chart = configureCategoryChart(xAxisTitle, yAxisTitle);
+        chart.getStyler().setYAxisLogarithmic(true);
+        chart.getStyler().setYAxisMin(0.02);
+
+        for (String dbName : dbNames) {
+            List<String> xData = new ArrayList<>();
+            List<Double> yData = new ArrayList<>();
+            for (var s : list.stream().filter(e -> e.getDatabase().equals(dbName)).toList()) {
+                yData.add(s.getSpeedUp());
+                xData.add(s.getMetric());
+            }
+            chart.addSeries(dbName, xData, yData);
+        }
+
+        Helper.savePdf(chart, scenario);
+    }
+
     private void createDatabaseBarChart(String scenario) {
         String xAxisTitle = "Database";
-        String yAxisTitle = "Query time";
         var list = summaryStatisticsRepository.findAllByNameAndType(scenario, DatabaseStatisticCollector.QUERY_TIME);
 
-        var chart = configureCategoryChart(list.getFirst().unit(), xAxisTitle, yAxisTitle);
+        String yAxisTitle = "Query time" + " [" + list.getFirst().unit() + "]";
+        var chart = configureCategoryChart(xAxisTitle, yAxisTitle);
         chart.getStyler().setLegendVisible(false);
 
         List<String> xData = new ArrayList<>();
@@ -226,10 +245,10 @@ public class Evaluation {
         Helper.savePdf(chart, scenario);
     }
 
-    private CategoryChart configureCategoryChart(String unit, String xAxisTitle, String yAxisTitle) {
+    private CategoryChart configureCategoryChart(String xAxisTitle, String yAxisTitle) {
         CategoryChart chart = new CategoryChartBuilder().width(chartWidth).height(chartHeight)
                 .xAxisTitle(xAxisTitle)
-                .yAxisTitle(yAxisTitle + " [" + unit + "]")
+                .yAxisTitle(yAxisTitle)
                 .build();
 
         chart.getStyler().setDefaultSeriesRenderStyle(CategorySeries.CategorySeriesRenderStyle.Bar);
@@ -285,16 +304,6 @@ public class Evaluation {
         Helper.savePdf(chart, scenario);
     }
 
-
-    private ScenarioStatisticsEntity getStatisticsEntity(String db, String scenario, String param) {
-        var l = summaryStatisticsRepository.getScenarioStatistics(db, scenario, param);
-        l.sort(Comparator.comparingInt(SummaryStatistics::sampleCount));
-        if (l.isEmpty()) {
-            return null;
-        } else {
-            return l.getFirst();
-        }
-    }
 
     private static String formatStatistics(List<ScenarioStatisticsEntity> summaryStatistics) {
         String[] header = new String[]{"Name", "Parameter", "Type", "Avg", "StDev", "Samples"};

@@ -3,7 +3,6 @@ package de.thriemer.spatial.evaluation;
 public class LatexTableGenerator {
 
     private static final String longLatexHeader = """
-            \\begin{table}[H]
             \\begin{tiny}
             \\begin{longtable}{
             """;
@@ -13,7 +12,6 @@ public class LatexTableGenerator {
             \\label{%s}
             \\end{longtable}
             \\end{tiny}
-            \\end{table}
             \n
             """;
 

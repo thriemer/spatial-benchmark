@@ -12,9 +12,11 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @Slf4j
-public class PaginationScenarioFirstRun extends Scenario {
+public class PaginationScenarioFirstRun extends Scenario<Integer> {
     private final String tableName = Parameters.OSM_DATA_TABLE;
 
     @Autowired
@@ -24,7 +26,7 @@ public class PaginationScenarioFirstRun extends Scenario {
         super("Pagination Scenario First Run");
     }
 
-    public Object[] getParams() {
+    public List<Integer> getParams() {
         return PaginationScenario.PAGE_SIZES;
     }
 
@@ -39,7 +41,7 @@ public class PaginationScenarioFirstRun extends Scenario {
     }
 
     @Override
-    public void iterate(DatabaseAbstraction database, Object pageSize) {
+    public void iterate(DatabaseAbstraction database, Integer pageSize) {
         Page<DataPoint> page;
 
         double halfWidth = boundingBox.getWidth() / 2d;
@@ -50,7 +52,7 @@ public class PaginationScenarioFirstRun extends Scenario {
                 new Envelope(new Envelope(cx - 0.1, cx + 0.1, cy - 0.1, cy + 0.1)));
 
         timer.start();
-        page = database.fetchArea(tableName, queryShape, 0, (int) pageSize);
+        page = database.fetchArea(tableName, queryShape, 0, pageSize);
         timer.end();
 
         database.deleteCursors();

@@ -14,7 +14,7 @@ import java.util.List;
 import static de.thriemer.spatial.framework.Helper.generateCircle;
 
 @Component
-public class MultiLevelGeoFilterScenario extends Scenario {
+public class MultiLevelGeoFilterScenario extends Scenario<Object> {
 
     private DataGenerator generator;
     private final String tableName = Parameters.OSM_DATA_TABLE;

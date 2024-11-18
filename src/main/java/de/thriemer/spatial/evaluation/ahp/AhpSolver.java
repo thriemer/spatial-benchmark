@@ -1,5 +1,6 @@
 package de.thriemer.spatial.evaluation.ahp;
 
+import com.jakewharton.fliptables.FlipTable;
 import de.thriemer.spatial.evaluation.ComparisonRepository;
 import de.thriemer.spatial.evaluation.Evaluation;
 import de.thriemer.spatial.evaluation.LatexTableGenerator;
@@ -40,16 +41,26 @@ public class AhpSolver {
         loadEfficiencyComparisons();
         var tree = buildTree();
         System.out.println(tree.printLatex());
-        System.out.println(tree.propagate(this::weightLookup));
-        Helper.saveFile(constructCriteriaMatrices(),"ahp_matrix");
-
-        for(var e:matrixCache.comparisonMatrixCache.entrySet()){
-            String fileName = e.getKey().replace(" ","_");
-            Helper.saveFile(matrixToTable(e),fileName,"generated/");
+        System.out.println("Quality Goals divided by two:\n"+tree.children.stream().filter(c->c.criteriaName.equals("Quality Goals")).findFirst().get().propagate(this::weightLookup));
+        System.out.println("Functional Requirements divided by two:\n"+tree.children.stream().filter(c->c.criteriaName.equals("Functional Requirements")).findFirst().get().propagate(this::weightLookup));
+        var result = tree.propagate(this::weightLookup);
+        String[] header = new String[]{"Database", "Score"};
+        String[][] content = result.entrySet().stream()
+                .sorted((e2, e1) -> Float.compare(e1.getValue(), e2.getValue()))
+                .map(e -> new String[]{transform(e.getKey()), Evaluation.df.format(e.getValue())}).toArray(String[][]::new);
+        System.out.println("Evaluation Result :\n" + FlipTable.of(header, content));
+        Helper.saveFile(LatexTableGenerator.generateTable(header, content, "|l|c|", false), "final_evaluation"+(useVanillaAdx ? "_vanilla" : ""));
+        Helper.saveFile(constructCriteriaMatrices(), "ahp_matrix");
+        Helper.saveFile(benchmarkResultString, "benchmark_matrix");
+        for (var e : matrixCache.comparisonMatrixCache.entrySet()) {
+            String fileName = e.getKey().replace(" ", "_");
+            Helper.saveFile(matrixToTable(e,"H"), fileName, "generated/");
         }
 
         return tree;
     }
+
+    String benchmarkResultString = "";
 
     void loadBenchmarkComparisons() {
         Map<String, String> map = Map.of(
@@ -70,7 +81,9 @@ public class AhpSolver {
                     speedUps.put(databaseName + other, weight);
                 }
             }
-            matrixCache.putComparisonsMatrix(entry.getKey(), matrixCache.matrixFromMap(speedUps, databaseNames));
+            Matrix m = matrixCache.matrixFromMap(speedUps, databaseNames);
+            benchmarkResultString += matrixToTable(new AbstractMap.SimpleEntry<>(entry.getKey(),m),"!htpb");
+            matrixCache.putComparisonsMatrix(entry.getKey(), m);
         }
     }
 
@@ -87,15 +100,18 @@ public class AhpSolver {
                 var comparisons = databaseComparisonRepository.combineComparison(transform(databaseName), entry.getValue());
                 for (var comparison : comparisons) {
                     float weight = (float) comparison.getSpeedUp();
-                    speedUps.put(databaseName + comparison.getDatabase(), weight);
+                    // one over speedup because using more resources is bad
+                    speedUps.put(databaseName + comparison.getDatabase(), 1f/weight);
                 }
             }
-            matrixCache.putComparisonsMatrix(entry.getKey(), matrixCache.matrixFromMap(speedUps, databaseNames));
+            Matrix m = matrixCache.matrixFromMap(speedUps, databaseNames);
+            benchmarkResultString += matrixToTable(new AbstractMap.SimpleEntry<>(entry.getKey(),m),"!htpb");
+            matrixCache.putComparisonsMatrix(entry.getKey(), m);
         }
     }
 
-    private String transform(String dbName){
-        if(useVanillaAdx&&dbName.equals("Azure Data Explorer")){
+    private String transform(String dbName) {
+        if (useVanillaAdx && dbName.equals("Azure Data Explorer")) {
             return "ADX Vanilla";
         }
         return dbName;
@@ -176,24 +192,24 @@ public class AhpSolver {
 
         String[] headerArray = header.toArray(String[]::new);
         String[][] contentArray = rows.stream().map(l -> l.toArray(String[]::new)).toArray(String[][]::new);
-        return LatexTableGenerator.generateTable(headerArray, contentArray, "|l|*{" + (header.size() - 2) + "}{c|}|r|",true);
+        return LatexTableGenerator.generateTable(headerArray, contentArray, "|l|*{" + (header.size() - 2) + "}{c|}|r|", true);
     }
 
 
-    private String matrixToTable(Map.Entry<String, Matrix> e){
+    private String matrixToTable(Map.Entry<String, Matrix> e, String floatType) {
         String criterion = e.getKey();
         Matrix m = e.getValue();
-        float consistency = calculateConsistency(m);
-        return "\\begin{table}[!htbp]\n\\centering\n" +
+        String sb = "\\begin{table}["+floatType+"]\n\\centering\n" +
                 matrixWithWeightToLatexTable(m) +
-                "\\caption{" + criterion + ", consistency: " + Evaluation.df.format(consistency) + "}\n" +
+                "\\caption{" + criterion + "}\n" +
                 "\\end{table}\n\n";
+        return sb;
     }
 
     private String constructCriteriaMatrices() {
         StringBuilder sb = new StringBuilder();
         for (var e : matrixCache.criteriaMatrixCache.entrySet()) {
-            sb.append(matrixToTable(e));
+            sb.append(matrixToTable(e,"!htp"));
         }
         return sb.toString();
     }

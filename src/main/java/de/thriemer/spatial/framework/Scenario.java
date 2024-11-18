@@ -5,19 +5,22 @@ import de.thriemer.spatial.evaluation.QueryTimer;
 import de.thriemer.spatial.evaluation.SummaryStatistics;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 @RequiredArgsConstructor
-public abstract class Scenario {
+public abstract class Scenario<T> {
 
     public final String name;
     public QueryTimer timer = new QueryTimer();
 
-    public Object[] getParams() {
-        return new Object[]{null};
+    public List<T> getParams() {
+        return List.of(null);
     }
 
     public abstract void prepare(DatabaseAbstraction database);
 
-    public abstract void iterate(DatabaseAbstraction database, Object param);
+    public abstract void iterate(DatabaseAbstraction database, T param);
 
     public void cleanup(DatabaseAbstraction database) {
     }

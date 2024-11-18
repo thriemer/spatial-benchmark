@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 
 @Component
 @Slf4j
-public class PaginationScenarioRandomAccess extends Scenario {
+public class PaginationScenarioRandomAccess extends Scenario<Object> {
     private final String tableName = Parameters.OSM_DATA_TABLE;
 
     @Autowired

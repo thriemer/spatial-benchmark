@@ -17,7 +17,7 @@ import static de.thriemer.spatial.framework.Helper.generateCircle;
 
 @Component
 @Slf4j
-public class FilterComplexityScenario extends Scenario {
+public class FilterComplexityScenario extends Scenario<Integer> {
     private DataGenerator generator;
     private final String tableName = Parameters.OSM_DATA_TABLE;
     private double minLon, maxLon, minLat, maxLat;
@@ -30,8 +30,8 @@ public class FilterComplexityScenario extends Scenario {
     }
 
     @Override
-    public Object[] getParams() {
-        return new Object[]{100, 250, 500, 1000, 2500, 5_000, 10_000, 25_000, 50_000, 100_000};
+    public List<Integer> getParams() {
+        return List.of(100, 250, 500, 1000, 2500, 5_000, 10_000, 25_000, 50_000, 100_000);
     }
 
     @Override
@@ -49,12 +49,12 @@ public class FilterComplexityScenario extends Scenario {
     }
 
     @Override
-    public void iterate(DatabaseAbstraction database, Object vertexCount) {
+    public void iterate(DatabaseAbstraction database, Integer vertexCount) {
         double radius = 0.2;
 
         var p = new Coordinate(generator.generateInRange(minLon + radius, maxLon - radius), generator.generateInRange(minLat + radius, maxLat - radius));
 
-        Geometry queryShape = generateCircle(p.getX(), p.getY(), radius, (int) vertexCount);
+        Geometry queryShape = generateCircle(p.getX(), p.getY(), radius, vertexCount);
         timer.start();
         List<DataPoint> points = database.fetchArea(tableName, queryShape);
         timer.end();
